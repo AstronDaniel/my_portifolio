@@ -7,7 +7,7 @@ import { Github, ExternalLink, Database, Lock, Share2 } from "lucide-react";
 const ROTATION_RANGE = 32.5;
 const HALF_ROTATION_RANGE = 32.5 / 2;
 
-export default function ProjectCard({ project }: { project: any }) {
+export default function ProjectCard({ project, onClick }: { project: any; onClick?: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
 
   const x = useMotionValue(0);
@@ -46,11 +46,12 @@ export default function ProjectCard({ project }: { project: any }) {
       ref={ref}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onClick={onClick}
       style={{
         transformStyle: "preserve-3d",
         transform,
       }}
-      className="relative h-full group"
+      className="relative h-full group cursor-pointer"
     >
       {/* Data Shard Container */}
       <div className="absolute inset-0 bg-blue-500/5 rounded-xl transform skew-y-2 scale-95 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl" />
@@ -77,17 +78,22 @@ export default function ProjectCard({ project }: { project: any }) {
             {project.name}
           </h3>
 
-          <p className="text-gray-400 text-sm mb-6 flex-grow leading-relaxed group-hover:text-gray-300 transition-colors">
+          <p className="text-gray-400 text-sm mb-6 flex-grow leading-relaxed group-hover:text-gray-300 transition-colors line-clamp-3">
             {project.description}
           </p>
 
           {/* Tech Stack */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {project.tech.map((t: string) => (
+            {project.tech.slice(0, 4).map((t: string) => (
               <span key={t} className="text-[10px] font-mono text-blue-300 px-2 py-1 bg-blue-900/20 border border-blue-500/20 rounded">
                 {t}
               </span>
             ))}
+            {project.tech.length > 4 && (
+              <span className="text-[10px] font-mono text-blue-300 px-2 py-1 bg-blue-900/20 border border-blue-500/20 rounded">
+                +{project.tech.length - 4}
+              </span>
+            )}
           </div>
 
           {/* Actions */}
@@ -96,15 +102,17 @@ export default function ProjectCard({ project }: { project: any }) {
               href={project.link}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors group/link"
             >
               <Github size={16} />
               <span className="group-hover/link:underline">Source</span>
             </a>
             <a
-              href={project.link}
+              href={project.link} // This might need to be project.homepage if available, but keeping consistent for now
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors group/link"
             >
               <span>Access</span>
