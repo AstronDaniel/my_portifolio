@@ -62,3 +62,42 @@ export const fetchGitHubProjects = async (): Promise<GitHubRepo[]> => {
         throw error;
     }
 };
+
+export const fetchProjectReadme = async (repoName: string): Promise<string | null> => {
+    const cacheKey = `readme_v2_${repoName}`;
+    // Check cache
+    if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            console.log(`[GitHub] Serving README from cache for ${repoName} (${cached.length} bytes)`);
+            return cached;
+        }
+    }
+
+    try {
+        console.log(`[GitHub] Fetching README for ${repoName}...`);
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/readme`, {
+            headers: {
+                'Accept': 'application/vnd.github.raw'
+            }
+        });
+
+        if (!response.ok) {
+            console.warn(`[GitHub] Failed to fetch README for ${repoName}: ${response.statusText}`);
+            return null;
+        }
+
+        const content = await response.text();
+        console.log(`[GitHub] Fetched README for ${repoName} (${content.length} bytes)`);
+
+        // Cache it
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(cacheKey, content);
+        }
+
+        return content;
+    } catch (error) {
+        console.error('Failed to fetch README:', error);
+        return null;
+    }
+};

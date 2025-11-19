@@ -1,7 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Github, ExternalLink, Star, GitFork, Calendar, Code2, Info, Layers } from "lucide-react";
-import { useState } from "react";
+import { X, Github, ExternalLink, Star, GitFork, Calendar, Code2, Info, Layers, BookOpen } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Project } from "@/hooks/useProjects";
+import { fetchProjectReadme } from "@/services/github";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ProjectModalProps {
     project: Project | null;
@@ -11,6 +14,20 @@ interface ProjectModalProps {
 
 export default function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
     const [activeTab, setActiveTab] = useState<"overview" | "tech" | "stats">("overview");
+    const [readme, setReadme] = useState<string | null>(null);
+    const [loadingReadme, setLoadingReadme] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && project) {
+            setLoadingReadme(true);
+            fetchProjectReadme(project.name)
+                .then(setReadme)
+                .catch(() => setReadme(null))
+                .finally(() => setLoadingReadme(false));
+        } else {
+            setReadme(null);
+        }
+    }, [isOpen, project]);
 
     if (!project) return null;
 
@@ -78,8 +95,8 @@ export default function ProjectModal({ project, isOpen, onClose }: ProjectModalP
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors relative ${activeTab === tab.id
-                                            ? "text-blue-400 bg-blue-500/10"
-                                            : "text-gray-400 hover:text-white hover:bg-white/5"
+                                        ? "text-blue-400 bg-blue-500/10"
+                                        : "text-gray-400 hover:text-white hover:bg-white/5"
                                         }`}
                                 >
                                     <tab.icon size={16} />
@@ -105,11 +122,45 @@ export default function ProjectModal({ project, isOpen, onClose }: ProjectModalP
                                     transition={{ duration: 0.2 }}
                                 >
                                     {activeTab === "overview" && (
-                                        <div className="space-y-4">
-                                            <p className="text-gray-300 leading-relaxed">
-                                                {project.description}
-                                            </p>
-                                            <div className="flex flex-wrap gap-3 mt-6">
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Description</h4>
+                                                <p className="text-gray-300 leading-relaxed">
+                                                    {project.description}
+                                                </p>
+                                            </div>
+
+                                            {loadingReadme ? (
+                                                <div className="flex items-center gap-2 text-blue-400 text-sm animate-pulse">
+                                                    <BookOpen size={16} />
+                                                    Loading README...
+                                                </div>
+                                            ) : readme ? (
+                                                <div className="bg-black/30 rounded-lg p-4 border border-white/5">
+                                                    <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                                        <BookOpen size={16} />
+                                                        README.md
+                                                    </h4>
+                                                    <div className="prose prose-invert prose-sm max-w-none text-gray-300 custom-markdown relative">
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                            {readme.slice(0, 500) + (readme.length > 500 ? "..." : "")}
+                                                        </ReactMarkdown>
+                                                        {readme.length > 500 && (
+                                                            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                                                        )}
+                                                    </div>
+                                                    <a
+                                                        href={project.github}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-400 text-xs mt-4 inline-block hover:underline"
+                                                    >
+                                                        Read full documentation on GitHub
+                                                    </a>
+                                                </div>
+                                            ) : null}
+
+                                            <div className="flex flex-wrap gap-3 pt-2">
                                                 {project.github && (
                                                     <a
                                                         href={project.github}
